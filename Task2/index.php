@@ -1,5 +1,4 @@
 <?php
-
 /*
  * Не уверен, как правильно читать такое количество данных, поэтому предполагается, что используется следующий запрос:
  * SELECT `email` FROM `users` WHERE POSITION('@' IN `email`) != 0;
@@ -10,36 +9,38 @@
  * как возвращает функция mockUsers
  */
 
+ini_set('memory_limit',-1);
+
 /**
  * @param int $numberOfUsers
- * @return array
+ * @return Generator
  */
-function mockUsers(int $numberOfUsers): array
+function mockUsers(int $numberOfUsers)
 {
     $users = [];
 
+    // Не содержит пустых и некорректных адресов, так как мы обрезали их запросом
     $domainsList = [
-        '',
         'test@mail.ru',
         'test@yandex.ru,test@mail.ru',
         'test@gmail.com',
         'test@yandex.ru,test@mail.ru,test@gmail.com',
         'test@yahoo.com,test@mail.ru,test@gmail.com',
-        '123123123',
+        'test@yahoo.com,test@mail.ru,12312312312'
     ];
 
     for ($i = 0; $i < $numberOfUsers; $i++) {
-        $users[]['email'] = $domainsList[mt_rand(0, count($domainsList) - 1)];
-    }
+        $users[$i]['email'] = $domainsList[mt_rand(0, count($domainsList) - 1)];
 
-    return $users;
+        yield $users[$i];
+    }
 }
 
 /**
  * @param array $users
  * @return array
  */
-function getListOfDomains(array $users): array
+function getListOfDomains($users): array
 {
     $emailDomains = [];
 
@@ -54,21 +55,17 @@ function getListOfDomains(array $users): array
             }
 
             if (!isset($emailDomains[$emailChunks[1]])) {
-                $emailDomains[$emailChunks[1]] = 0;
+                $emailDomains[$emailChunks[1]] = 1;
+            } else {
+                $emailDomains[$emailChunks[1]]++;
             }
-
-            $emailDomains[$emailChunks[1]]++;
         }
     }
 
     return $emailDomains;
 }
 
-$users = mockUsers(100000000);
-
-echo '-----------------------------------------------------------------------------------------------------------------';
-
 $t1 = microtime(true);
-var_dump(getListOfDomains($users));
+var_dump(getListOfDomains(mockUsers(1000000)));
 $t2 = microtime(true) - $t1;
 echo $t2 . PHP_EOL;
