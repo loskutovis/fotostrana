@@ -2,9 +2,9 @@
 
 namespace Fotostrana;
 
-use SplFileObject;
+use Fotostrana\Exception\EOFException;
 
-class FSFileIterator implements \SeekableIterator
+class FileIterator implements \SeekableIterator
 {
     /**
      * @var int $position
@@ -12,16 +12,17 @@ class FSFileIterator implements \SeekableIterator
     private $position;
 
     /**
-     * @var SplFileObject $file
+     * @var File $file
      */
     private $file;
 
     /**
-     * FSFileIterator constructor.
-     * @param SplFileObject $file
+     * FileIterator constructor.
+     * @param File $file
      */
-    public function __construct(SplFileObject $file)
+    public function __construct(File $file)
     {
+        $this->position = 0;
         $this->file = $file;
     }
 
@@ -31,9 +32,9 @@ class FSFileIterator implements \SeekableIterator
      * @return mixed Can return any type.
      * @since 5.0.0
      */
-    public function current()
+    public function current(): string
     {
-        // TODO: Implement current() method.
+        return $this->file->getLine($this->position);
     }
 
     /**
@@ -67,7 +68,7 @@ class FSFileIterator implements \SeekableIterator
      */
     public function valid(): bool
     {
-        return $this->file->valid();
+        return $this->position < $this->file->getNumberOfLines();
     }
 
     /**
@@ -84,21 +85,20 @@ class FSFileIterator implements \SeekableIterator
     /**
      * Seeks to a position
      * @link https://php.net/manual/en/seekableiterator.seek.php
-     * @param int $position <p>
-     * The position to seek to.
-     * </p>
+     * @param int $position The position to seek to.
      * @return void
      * @since 5.1.0
      */
     public function seek($position): void
     {
-        try {
-            $this->file->fseek($position);
-        } catch (\OutOfBoundsException $exception) {
-            echo $exception->getMessage() . PHP_EOL;
-            die();
+        if ($position < 0) {
+            $position = $this->file->getNumberOfLines() + $position;
         }
 
         $this->position = $position;
+
+        if (!$this->valid()) {
+            throw new EOFException();
+        }
     }
 }
