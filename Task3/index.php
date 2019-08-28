@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/FSSeekableIterator.php';
+require_once __DIR__ . '/vendor/autoload.php';
 
 $file = new SplFileObject(__DIR__. '/sample_file.txt');
 
